@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1222">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SKYBOUND">
+  <meta name="description" content="グラブルの宝晶石・ガチャチケットを管理する天井カウンター。ブラウザで動作、データは端末に自動保存。">
+  <title>SKYBOUND | 天井トラッカー</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg:#090e1a; --surface:#111b2c; --surface2:#16243a; --surface3:#1c2b40;
+      --border:#29364c; --text:#eef4ff; --muted:#8d9bb2; --subtle:#60738f;
+      --cyan:#62deed; --violet:#b4a0ff; --gold:#ffcf91; --green:#86e7bd;
+      --shadow:0 24px 80px rgba(0,0,0,.24);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-width:320px;background:radial-gradient(ellipse 68% 38% at 82% -8%, #1a3454 0%, transparent 75%),radial-gradient(ellipse 55% 55% at -22% 64%, #16213d 0%, transparent 76%),var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Noto Sans JP","Yu Gothic",Meiryo,sans-serif;color:var(--text);font-size:14px;line-height:1.6}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+    .wrap{max-width:1160px;margin:0 auto;padding:33px 26px 50px}
+    .top{display:flex;align-items:center;justify-content:space-between;margin:0 0 32px;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-mark{display:grid;place-items:center;width:42px;height:42px;border:1px solid #48688c;border-radius:14px;background:linear-gradient(145deg,#233f60,#101e35);box-shadow:0 0 26px #3f8cac20;color:var(--cyan)}
+    .brand-mark svg{width:23px;height:23px}
+    .brand-name{font-size:17px;font-weight:850;letter-spacing:.2em;line-height:1.15}
+    .brand-caption{color:var(--muted);font-size:11px;letter-spacing:.13em;margin-top:3px}
+    .head-actions{display:flex;align-items:center;gap:10px}
+    .save-indicator{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:12px}
+    .dot{width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 10px #86e7bd99}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--border);background:#18283d;color:var(--text);border-radius:11px;padding:10px 14px;font-weight:680;transition:background .15s,border-color .15s,transform .15s;white-space:nowrap}
+    .btn:hover{background:#21364f;border-color:#46627f}
+    .btn:active{transform:scale(.98)}
+    .btn svg{width:16px;height:16px}
+    .btn-primary{background:linear-gradient(115deg,#54cadd,#8f93ec);color:#101e31;border:0;box-shadow:0 8px 27px #5ad2dd20}
+    .btn-primary:hover{background:linear-gradient(115deg,#76e7f2,#aaaafc);border:0}
+    .btn-ghost{background:transparent}
+    .intro{margin-bottom:23px}
+    .eyebrow{font-size:11px;color:var(--cyan);font-weight:800;letter-spacing:.25em;display:flex;align-items:center;gap:8px}
+    .eyebrow::before{content:"";width:18px;height:1px;background:var(--cyan)}
+    h1{font-size:clamp(26px,3.2vw,35px);letter-spacing:-.04em;line-height:1.3;margin:8px 0 7px;font-weight:850}
+    .subtitle{color:var(--muted);margin:0}
+    .layout{display:grid;grid-template-columns: minmax(0,1.2fr) minmax(330px,.8fr);gap:18px;align-items:stretch}
+    .panel{background:linear-gradient(155deg,#132136 0%,#101a2b 80%);border:1px solid #293c57;border-radius:20px;box-shadow:var(--shadow)}
+    .overview{padding:29px 30px 26px;position:relative;overflow:hidden;min-height:400px}
+    .overview::after{content:"";pointer-events:none;position:absolute;width:315px;height:315px;right:-170px;top:-175px;border-radius:50%;background:#69d9fc0b;box-shadow:0 0 120px 50px #78c7ff0a}
+    .section-title{font-size:13px;letter-spacing:.02em;font-weight:750;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .label-muted{font-weight:500;color:var(--muted);font-size:12px}
+    .hero-split{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:30px 0 23px}
+    .hero-copy{min-width:0;flex:1}
+    .hero-kicker{font-size:12px;color:var(--muted);margin-bottom:10px}
+    .hero-value{font-size:clamp(38px,5vw,62px);line-height:1.05;letter-spacing:-.07em;font-weight:850;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .hero-value span{font-size:15px;letter-spacing:0;margin-left:8px;font-weight:620;color:var(--muted)}
+    .hero-hint{display:flex;align-items:center;gap:7px;color:var(--gold);font-size:12px;margin-top:14px;font-weight:680}
+    .hero-hint svg{height:15px;width:15px}
+    .gauge{width:183px;height:183px;flex:none;position:relative}
+    .gauge svg{width:100%;height:100%;transform:rotate(-90deg)}
+    .ring-bg{fill:none;stroke:#283b51;stroke-width:9}
+    .ring-progress{fill:none;stroke:url(#ring-gradient);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset .45s ease}
+    .gauge-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    .gauge-percent{font-size:31px;line-height:1.2;font-weight:830;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+    .gauge-caption{font-size:11px;color:var(--muted);margin-top:4px}
+    .progress-caption{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:4px}
+    .meter{height:8px;border-radius:30px;background:#283c54;overflow:hidden;margin-top:11px}
+    .meter-fill{height:100%;width:0;background:linear-gradient(90deg,#5ad6e4,#ab9bff);border-radius:30px;transition:width .45s ease}
+    .breakdown{margin-top:28px}
+    .breakdown-top{display:flex;justify-content:space-between;align-items:center;gap:8px;color:var(--muted);font-size:12px;margin-bottom:9px}
+    .breakdown-bar{height:9px;background:#283c54;border-radius:30px;display:flex;overflow:hidden}
+    .breakdown-segment{height:100%;width:0;transition:width .35s ease}
+    .breakdown-segment.crystal{background:#5ccedb}
+    .breakdown-segment.single{background:#a49afa}
+    .breakdown-segment.ten{background:#ecc08c}
+    .breakdown-legend{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:11px}
+    .legend-item{min-width:0;color:var(--muted);font-size:11px}
+    .legend-item strong{font-size:12px;color:var(--text);display:block;font-variant-numeric:tabular-nums;margin-top:3px}
+    .legend-label{display:flex;align-items:center;gap:6px;white-space:nowrap}
+    .legend-dot{height:7px;width:7px;border-radius:50%;display:inline-block;flex:none}
+    .legend-dot.crystal{background:#5ccedb}.legend-dot.single{background:#a49afa}.legend-dot.ten{background:#ecc08c}
+    .overview-bottom{border-top:1px solid var(--border);margin-top:25px;padding-top:20px;display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+    .state-pill{font-size:12px;border-radius:30px;border:1px solid #46677a;color:#a5deed;background:#1f3848;padding:5px 12px;font-weight:750;white-space:nowrap}
+    .state-pill.ready{color:#98efc7;background:#1a443f;border-color:#357265}
+    .muted{color:var(--muted)}
+    .input-panel{padding:25px 24px 21px}
+    .input-description{color:var(--muted);font-size:12px;margin:3px 0 22px}
+    .field{display:block;margin:0 0 15px}
+    .field-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+    .field-head label{font-size:13px;font-weight:710}
+    .field-icon{color:var(--cyan);display:inline-flex;align-items:center;gap:8px}
+    .field-icon svg{width:17px;height:17px}
+    .field-extra{font-size:11px;color:var(--muted)}
+    .input-row{display:flex;align-items:center;background:#0c1627;border:1px solid #30435c;border-radius:12px;transition:border-color .18s,box-shadow .18s;overflow:hidden}
+    .input-row:focus-within{border-color:var(--cyan);box-shadow:0 0 0 3px #4ac7df19}
+    .input-row input{border:0;min-width:0;flex:1;width:100%;color:var(--text);background:transparent;padding:10px 13px;font-size:20px;font-weight:750;letter-spacing:.015em;font-variant-numeric:tabular-nums;outline:0;box-shadow:none}
+    .input-row input:focus{outline:0}
+    .input-row input::-webkit-outer-spin-button,.input-row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+    .input-row input[type=number]{-moz-appearance:textfield;appearance:textfield}
+    .unit{color:var(--muted);font-size:12px;margin:0 13px}
+    .mini-buttons{display:flex;gap:6px;margin-top:7px}
+    .chip{background:#1a2a40;border:1px solid #2c425c;border-radius:7px;color:#a9bdd3;padding:2px 10px;font-size:11px;transition:.15s}
+    .chip:hover{background:#2a4059;color:var(--text)}
+    .input-info{color:var(--subtle);font-size:11px;margin-top:10px}
+    .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin-top:18px}
+    .stat{border:1px solid var(--border);border-radius:16px;background:linear-gradient(155deg,#142137,#111a2c);padding:19px 20px;min-width:0}
+    .stat-label{color:var(--muted);font-size:12px;margin-bottom:7px}
+    .stat-value{font-size:clamp(21px,3vw,29px);font-weight:820;letter-spacing:-.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+    .stat-value em{font-style:normal;font-size:13px;color:var(--muted);font-weight:600;margin-left:5px}
+    .stat-foot{font-size:11px;color:var(--subtle);margin-top:5px}
+    .lower{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:18px;margin-top:18px}
+    .history{padding:23px 24px}
+    .history-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .history-sub{color:var(--muted);font-size:12px;margin-top:4px}
+    .history-chart{display:flex;min-height:96px;margin:16px 0 2px;background:#0e1b2c;border-radius:12px;overflow:hidden}
+    .history-chart svg{display:block;width:100%;height:96px}
+    .empty-chart{display:flex;align-items:center;justify-content:center;width:100%;color:var(--subtle);font-size:12px;text-align:center;padding:12px}
+    .log{display:grid;gap:0}
+    .log-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto 20px;gap:14px;align-items:center;padding:10px 2px;border-bottom:1px solid #27364b}
+    .log-row:last-child{border-bottom:0}
+    .log-time{color:var(--muted);font-size:12px}
+    .log-total{font-variant-numeric:tabular-nums;font-weight:700}
+    .delta{font-variant-numeric:tabular-nums;color:var(--muted);font-size:12px}
+    .delta.positive{color:var(--green)}
+    .delta.negative{color:#ffa5a6}
+    .delete-row{border:0;color:var(--subtle);background:transparent;padding:2px;font-size:16px}
+    .delete-row:hover{color:#ffa5a6}
+    .empty-log{color:var(--subtle);font-size:12px;padding:10px 0}
+    .tools{padding:23px 20px}
+    .tool-stack{display:grid;gap:9px;margin-top:16px}
+    .tool-stack .btn{width:100%;justify-content:flex-start;font-size:12px}
+    .tool-stack .danger{color:#feb2b8}
+    .tool-note{font-size:11px;color:var(--subtle);margin-top:16px}
+    .footer{display:flex;justify-content:space-between;gap:12px;color:var(--subtle);font-size:11px;margin:23px 3px 0;flex-wrap:wrap}
+    .toast{position:fixed;right:22px;bottom:22px;padding:12px 17px;background:#254b55;border:1px solid #4b96a1;color:#ddffff;border-radius:12px;box-shadow:0 12px 40px #0006;font-size:13px;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:30}
+    .toast.visible{opacity:1;transform:translateY(0)}
+    @media(max-width:900px){.layout{grid-template-columns:1fr}.input-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;align-content:start}.input-panel>.section-title,.input-panel>.input-description,.input-panel>.input-info{grid-column:1/-1}.lower{grid-template-columns:1fr 250px}.hero-value{font-size:57px}}
+    @media(max-width:680px){.wrap{padding:20px 14px 40px}.top{margin-bottom:24px}.head-actions .save-indicator{display:none}.btn{padding:9px 11px}.brand-name{font-size:14px;letter-spacing:.16em}.brand-mark{width:38px;height:38px}.brand-caption{font-size:10px}.intro{margin-bottom:18px}.overview{padding:21px 19px;min-height:0}.hero-split{margin:25px 0;gap:10px}.hero-value{font-size:clamp(32px,7vw,52px)}.gauge{width:128px;height:128px}.gauge-percent{font-size:24px}.input-panel{padding:20px 18px;column-gap:14px}.stats{gap:8px}.stat{padding:14px 11px}.stat-label{font-size:11px}.stat-value{font-size:clamp(17px,4vw,26px)}.stat-value em{font-size:11px}.stat-foot{font-size:10px}.lower{grid-template-columns:1fr}.tools{padding:22px}.tool-stack{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:440px){.overview>.section-title{flex-wrap:wrap}.overview>.section-title>span:first-child{white-space:nowrap}.breakdown-legend{gap:3px}.legend-item{font-size:10px}.legend-item strong{font-size:11px}.input-panel{grid-template-columns:1fr}.top .btn{font-size:12px}.hero-split{gap:5px}.hero-value{font-size:35px}.hero-value span{font-size:12px}.gauge{width:111px;height:111px}.gauge-percent{font-size:22px}.gauge-caption{font-size:9px}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(3){grid-column:1/-1}.tool-stack{grid-template-columns:1fr}.log-row{gap:8px}.log-total{font-size:12px}.delta{font-size:11px}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2 4.2 9.3 12 22l7.8-12.7L12 2Z"/><path d="m4.2 9.3 7.8 2.6 7.8-2.6M12 2v20"/></svg>
+        </div>
+        <div><div class="brand-name">SKYBOUND</div><div class="brand-caption">SPARK TRACKER / 天井管理</div></div>
+      </div>
+      <div class="head-actions">
+        <span class="save-indicator"><span class="dot"></span> 端末に自動保存</span>
+        <button class="btn btn-ghost" id="demoBtn" type="button">サンプル入力</button>
+      </div>
+    </header>
+
+    <div class="intro">
+      <div class="eyebrow">GRANBLUE FANTASY / RESOURCE MANAGER</div>
+      <h1>天井まで、あとどれくらい？</h1>
+      <p class="subtitle">宝晶石とガチャチケットをまとめて、300連までの距離を可視化。</p>
+    </div>
+
+    <div class="layout">
+      <section class="panel overview" aria-labelledby="overviewTitle">
+        <div class="section-title" id="overviewTitle"><span>天井到達シミュレーション</span><span class="label-muted">目標：300連 / 90,000石相当</span></div>
+        <div class="hero-split">
+          <div class="hero-copy">
+            <div class="hero-kicker">天井までの不足</div>
+            <div class="hero-value" id="shortage" aria-live="polite">90,000<span>石相当</span></div>
+            <div class="hero-hint" id="shortageText">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <span>あと 300連分のリソースが必要</span>
+            </div>
+          </div>
+          <div class="gauge" aria-label="天井充足率">
+            <svg viewBox="0 0 220 220" aria-hidden="true"><defs><linearGradient id="ring-gradient" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#60dce9"/><stop offset="100%" stop-color="#b19aff"/></linearGradient></defs><circle class="ring-bg" cx="110" cy="110" r="91"/><circle id="ring" class="ring-progress" cx="110" cy="110" r="91" stroke-dasharray="571.77" stroke-dashoffset="571.77"/></svg>
+            <div class="gauge-center"><div class="gauge-percent" id="percent">0.0%</div><div class="gauge-caption">天井充足率</div></div>
+          </div>
+        </div>
+        <div class="progress-caption"><span>天井到達状況</span><span id="progress-label">0 / 90,000 石相当</span></div>
+        <div class="meter" role="progressbar" aria-label="天井到達状況" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="meter"><div class="meter-fill" id="meter-fill"></div></div>
+        <div class="breakdown">
+          <div class="breakdown-top"><span>所持リソースの内訳</span><span>宝晶石換算</span></div>
+          <div class="breakdown-bar" aria-label="所持リソースの内訳"><span class="breakdown-segment crystal" id="crystal-bar"></span><span class="breakdown-segment single" id="single-bar"></span><span class="breakdown-segment ten" id="ten-bar"></span></div>
+          <div class="breakdown-legend">
+            <div class="legend-item"><span class="legend-label"><span class="legend-dot crystal"></span>宝晶石</span><strong id="crystal-part">0</strong></div>
+            <div class="legend-item"><span class="legend-label"><span class="legend-dot single"></span>単発チケ</span><strong id="single-part">0</strong></div>
+            <div class="legend-item"><span class="legend-label"><span class="legend-dot ten"></span>10連チケ</span><strong id="ten-part">0</strong></div>
+          </div>
+        </div>
+        <div class="overview-bottom">
+          <span class="state-pill" id="state-pill">貯蓄中</span>
+          <span class="label-muted" id="overview-note">現在の所持分で 0連引けます</span>
+        </div>
+      </section>
+
+      <section class="panel input-panel" aria-labelledby="inputTitle">
+        <div class="section-title" id="inputTitle">保有リソースを入力 <span class="label-muted">変更すると即反映</span></div>
+        <div class="input-description">ゲーム内に表示されている現在の所持数を入力してね。</div>
+
+        <div class="field">
+          <div class="field-head"><label class="field-icon" for="crystals"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2 3 9l9 13 9-13-9-7Z"/><path d="m3 9 9 3 9-3M12 2v20"/></svg>宝晶石</label><span class="field-extra">1連 = 300個</span></div>
+          <div class="input-row"><input id="crystals" type="number" min="0" max="999999999" step="1" inputmode="numeric" value="0" aria-label="宝晶石の所持数"><span class="unit">個</span></div>
+          <div class="mini-buttons"><button class="chip" data-field="crystals" data-add="300" type="button">+300</button><button class="chip" data-field="crystals" data-add="3000" type="button">+3,000</button></div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label class="field-icon" for="single"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h6M9 12h6M9 17h4"/></svg>単発ガチャチケット</label><span class="field-extra">1枚 = 1連</span></div>
+          <div class="input-row"><input id="single" type="number" min="0" max="9999999" step="1" inputmode="numeric" value="0" aria-label="単発ガチャチケットの枚数"><span class="unit">枚</span></div>
+          <div class="mini-buttons"><button class="chip" data-field="single" data-add="1" type="button">+1</button><button class="chip" data-field="single" data-add="10" type="button">+10</button></div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label class="field-icon" for="ten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="14" height="16" rx="2"/><path d="M8 2h10a3 3 0 0 1 3 3v12M7 10h6M7 15h4"/></svg>10連ガチャチケット</label><span class="field-extra">1枚 = 10連</span></div>
+          <div class="input-row"><input id="ten" type="number" min="0" max="9999999" step="1" inputmode="numeric" value="0" aria-label="10連ガチャチケットの枚数"><span class="unit">枚</span></div>
+          <div class="mini-buttons"><button class="chip" data-field="ten" data-add="1" type="button">+1</button><button class="chip" data-field="ten" data-add="5" type="button">+5</button></div>
+        </div>
+        <div class="field">
+          <div class="field-head"><label class="field-icon" for="drawn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></svg>今回すでに引いた回数</label><span class="field-extra">任意 / 0〜300</span></div>
+          <div class="input-row"><input id="drawn" type="number" min="0" max="300" step="1" inputmode="numeric" value="0" aria-label="現在のガチャですでに引いた回数"><span class="unit">連</span></div>
+          <div class="mini-buttons"><button class="chip" data-field="drawn" data-add="1" type="button">+1</button><button class="chip" data-field="drawn" data-add="10" type="button">+10</button><button class="chip" data-field="drawn" data-set="0" type="button">リセット</button></div>
+        </div>
+        <div class="input-info">※すでに引いた回数は同一ガチャ開催期間中の分だけ。通常のガチャチケットのみ計上。</div>
+      </section>
+    </div>
+
+    <div class="stats" aria-label="所持リソースの集計">
+      <section class="stat"><div class="stat-label">保有資産の宝晶石換算</div><div class="stat-value" id="asset-equivalent">0<em>個相当</em></div><div class="stat-foot">チケットも宝晶石に換算</div></section>
+      <section class="stat"><div class="stat-label">今すぐ引ける回数</div><div class="stat-value" id="available-pulls">0<em>連</em></div><div class="stat-foot" id="pulls-foot">宝晶石とチケットを合算</div></section>
+      <section class="stat"><div class="stat-label">所持リソースだけで</div><div class="stat-value" id="ceilings">0<em>天井分</em></div><div class="stat-foot" id="ceilings-foot">次の天井まで残り 90,000相当</div></section>
+    </div>
+
+    <div class="lower">
+      <section class="panel history" aria-labelledby="historyTitle">
+        <div class="history-head">
+          <div><div class="section-title" id="historyTitle">貯蓄の記録</div><div class="history-sub">好きなタイミングでスナップショットを残せます。</div></div>
+          <button class="btn btn-primary" id="snapshotBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>今の数値を記録</button>
+        </div>
+        <div class="history-chart" id="historyChart"><div class="empty-chart">記録すると、ここに増減グラフが表示されます。</div></div>
+        <div class="log" id="historyLog"><div class="empty-log">まだ記録がありません。</div></div>
+      </section>
+      <section class="panel tools" aria-labelledby="toolsTitle">
+        <div class="section-title" id="toolsTitle">データ管理</div>
+        <div class="tool-stack">
+          <button class="btn" id="exportBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></svg>バックアップ保存</button>
+          <button class="btn" id="importBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21V9m-4 4 4-4 4 4M4 7V3h16v4"/></svg>バックアップ読込</button>
+          <button class="btn danger" id="resetBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg>データ初期化</button>
+          <input type="file" id="importFile" accept=".json,application/json" hidden>
+        </div>
+        <p class="tool-note">入力内容と履歴はこのブラウザ内に保存されます。別の端末でも使うならバックアップを移してください。</p>
+      </section>
+    </div>
+    <footer class="footer"><span>SKYBOUND SPARK TRACKER · v1.0</span><span>非公式ファンツール / グラブル運営とは無関係です</span></footer>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    'use strict';
+    (() => {
+      const KEY = 'skybound-spark-v1';
+      const MAX = { crystals: 999999999, single: 9999999, ten: 9999999, drawn: 300 };
+      const FIELDS = Object.keys(MAX);
+      const $ = id => document.getElementById(id);
+      const fmt = n => Number(n || 0).toLocaleString('ja-JP');
+      const clamp = (value, max) => {
+        const n = Number(value);
+        return Number.isFinite(n) ? Math.max(0, Math.min(max, Math.floor(n))) : 0;
+      };
+      const normalize = data => {
+        const result = { crystals:0, single:0, ten:0, drawn:0, snapshots:[] };
+        if (!data || typeof data !== 'object') return result;
+        for (const field of FIELDS) result[field] = clamp(data[field], MAX[field]);
+        if (Array.isArray(data.snapshots)) {
+          result.snapshots = data.snapshots.slice(-150).filter(e => e && Number.isFinite(new Date(e.at).getTime())).map(e => ({
+            at:new Date(e.at).toISOString(),
+            crystals:clamp(e.crystals,MAX.crystals), single:clamp(e.single,MAX.single), ten:clamp(e.ten,MAX.ten), drawn:clamp(e.drawn,MAX.drawn)
+          }));
+        }
+        return result;
+      };
+      let state;
+      try { state = normalize(JSON.parse(localStorage.getItem(KEY))); }
+      catch { state = normalize(null); }
+      let toastTimer;
+      function message(text) {
+        const node = $('toast');
+        node.textContent = text; node.classList.add('visible');
+        clearTimeout(toastTimer); toastTimer = setTimeout(() => node.classList.remove('visible'), 2400);
+      }
+      function persist() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { message('この環境では自動保存できません。バックアップをご利用ください。'); } }
+      function equivalents(d) { return d.crystals + d.single * 300 + d.ten * 3000; }
+      function refill() { for (const field of FIELDS) $(field).value = String(state[field]); }
+      function render() {
+        const equivalent = equivalents(state);
+        const pulls = Math.floor(state.crystals / 300) + state.single + state.ten * 10;
+        const needPulls = Math.max(0,300 - state.drawn);
+        const deficit = Math.max(0, needPulls * 300 - equivalent);
+        const deficitPulls = Math.max(0, needPulls - pulls);
+        const totalValue = Math.min(90000, equivalent + state.drawn * 300);
+        const percent = Math.min(100,(equivalent + state.drawn * 300)/90000*100);
+        $('shortage').innerHTML = `${fmt(deficit)}<span>石相当</span>`;
+        const hint = $('shortageText').querySelector('span');
+        const pill = $('state-pill');
+        if (state.drawn >= 300) {
+          hint.textContent = '今回のガチャはすでに300連に到達';
+          pill.textContent = '天井到達済み'; pill.classList.add('ready');
+        } else if (deficit === 0) {
+          hint.textContent = 'いまの所持リソースで天井まで引けます';
+          pill.textContent = '天井到達可能'; pill.classList.add('ready');
+        } else {
+          hint.textContent = `あと ${fmt(deficitPulls)}連分のリソースが必要`;
+          pill.textContent = '貯蓄中'; pill.classList.remove('ready');
+        }
+        for (const [id, amount] of [['crystal',state.crystals],['single',state.single*300],['ten',state.ten*3000]]) {
+          $(id+'-bar').style.width = `${equivalent ? amount/equivalent*100 : 0}%`;
+          $(id+'-part').textContent = fmt(amount);
+        }
+        $('percent').textContent = `${percent.toFixed(1)}%`;
+        $('meter-fill').style.width = `${percent}%`;
+        $('meter').setAttribute('aria-valuenow',String(Math.round(percent)));
+        $('ring').setAttribute('stroke-dashoffset', String((571.77 * (1 - percent/100)).toFixed(3)));
+        $('progress-label').textContent = `${fmt(totalValue)} / 90,000 石相当`;
+        $('overview-note').textContent = `現在の所持分で ${fmt(pulls)}連引けます`;
+        $('asset-equivalent').innerHTML = `${fmt(equivalent)}<em>個相当</em>`;
+        $('available-pulls').innerHTML = `${fmt(pulls)}<em>連</em>`;
+        $('pulls-foot').textContent = `宝晶石 ${fmt(Math.floor(state.crystals/300))}連 + チケット ${fmt(state.single+state.ten*10)}連`;
+        const ceilings = Math.floor(equivalent / 90000);
+        $('ceilings').innerHTML = `${fmt(ceilings)}<em>天井分</em>`;
+        $('ceilings-foot').textContent = `次の天井まで残り ${fmt(90000 - equivalent % 90000)}石相当`;
+      }
+      function paintHistory() {
+        const list = $('historyLog'); list.replaceChildren();
+        const chart = $('historyChart'); chart.replaceChildren();
+        const items = state.snapshots;
+        if (items.length === 0) {
+          const e = document.createElement('div'); e.className = 'empty-log'; e.textContent='まだ記録がありません。';list.append(e);
+          const c = document.createElement('div'); c.className='empty-chart'; c.textContent='記録すると、ここに増減グラフが表示されます。';chart.append(c);
+          return;
+        }
+        const data = items.slice(-14).map(equivalents);
+        const low = Math.min(...data, 0), high = Math.max(...data, 90000);
+        const mx = high === low ? 1 : high - low;
+        const points = data.map((v,i) => `${24+(data.length===1?.5:i/(data.length-1))*552},${79 - (v-low)/mx*60}`).join(' ');
+        const ns = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 600 96');svg.setAttribute('preserveAspectRatio','none');
+        const mk = (type,attrs) => { const elem = document.createElementNS(ns,type); for (const [key,value] of Object.entries(attrs)) elem.setAttribute(key,String(value));return elem; };
+        const defs=mk('defs',{});const gradient=mk('linearGradient',{id:'chartGradient',x1:'0',x2:'0',y1:'0',y2:'1'});
+        gradient.append(mk('stop',{offset:'0%','stop-color':'#59d6e8','stop-opacity':'.28'}),mk('stop',{offset:'100%','stop-color':'#59d6e8','stop-opacity':'0'}));defs.append(gradient);svg.append(defs);
+        svg.append(mk('line',{x1:0,y1:79,x2:600,y2:79,stroke:'#324660','stroke-dasharray':'3 6'}));
+        const lines=points.split(' ');
+        const polygon = `24,96 ${lines.join(' ')} 576,96`;
+        svg.append(mk('polygon',{points:polygon,fill:'url(#chartGradient)'}));
+        svg.append(mk('polyline',{points,fill:'none',stroke:'#69d9e9','stroke-width':3,'stroke-linejoin':'round','stroke-linecap':'round'}));
+        const [lastX,lastY] = lines[lines.length - 1].split(',');
+        svg.append(mk('circle',{cx:lastX,cy:lastY,r:4,fill:'#b5eaff',stroke:'#19384b','stroke-width':2}));
+        chart.append(svg);
+        for (let index = items.length - 1; index >= Math.max(0,items.length-5); index--) {
+          const item = items[index];const previous = index>0 ? equivalents(items[index-1]):null;
+          const delta = previous === null ? null : equivalents(item)-previous;
+          const row=document.createElement('div');row.className='log-row';
+          const time=document.createElement('span'); time.className='log-time'; time.textContent=new Intl.DateTimeFormat('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(item.at));
+          const value=document.createElement('span');value.className='log-total';value.textContent=`${fmt(equivalents(item))} 石相当`;
+          const change=document.createElement('span');change.className=`delta ${delta>0?'positive':delta<0?'negative':''}`;change.textContent=delta===null?'初回':`${delta>0?'+':''}${fmt(delta)}`;
+          const remove=document.createElement('button');remove.className='delete-row';remove.type='button';remove.title='この記録を削除';remove.setAttribute('aria-label','この記録を削除');remove.textContent='×';remove.addEventListener('click',()=>{state.snapshots.splice(index,1);persist();paintHistory();message('記録を削除しました');});
+          row.append(time,value,change,remove);list.append(row);
+        }
+      }
+      for (const field of FIELDS) {
+        $(field).addEventListener('input', () => { state[field] = clamp($(field).value,MAX[field]); persist();render(); });
+        $(field).addEventListener('blur', () => { $(field).value = String(state[field]); });
+      }
+      document.querySelectorAll('[data-field]').forEach(btn => btn.addEventListener('click', () => {
+        const field=btn.dataset.field;
+        state[field] = btn.hasAttribute('data-set') ? clamp(btn.dataset.set,MAX[field]) : clamp(state[field]+Number(btn.dataset.add),MAX[field]);
+        $(field).value=String(state[field]);persist();render();
+      }));
+      $('snapshotBtn').addEventListener('click',()=>{
+        const item={at:new Date().toISOString()};for (const field of FIELDS)item[field]=state[field];
+        state.snapshots.push(item);state.snapshots=state.snapshots.slice(-150);persist();paintHistory();message('現在の所持数を記録しました');
+      });
+      $('demoBtn').addEventListener('click',()=>{
+        if ((state.crystals||state.single||state.ten||state.drawn) && !window.confirm('現在の入力値をサンプルで置き換えますか？（履歴は残ります）')) return;
+        Object.assign(state,{crystals:48000,single:38,ten:3,drawn:0});refill();persist();render();message('サンプル数値を入力しました');
+      });
+      $('exportBtn').addEventListener('click',()=>{
+        const payload={app:'skybound-spark',version:1,exportedAt:new Date().toISOString(),data:state};
+        const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');a.href=url;a.download=`skybound-backup-${new Date().toISOString().slice(0,10)}.json`;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        message('バックアップを書き出しました');
+      });
+      $('importBtn').addEventListener('click',()=>$('importFile').click());
+      $('importFile').addEventListener('change',async event=>{
+        const file=event.target.files?.[0];if(!file)return;
+        try {
+          if(file.size>2*1024*1024) throw Error('ファイルが大きすぎます');
+          const raw=JSON.parse(await file.text());
+          if(raw.app !== 'skybound-spark' || !raw.data || typeof raw.data !== 'object' || !FIELDS.every(f=>Number.isFinite(Number(raw.data[f])))) throw Error('対応していないバックアップ形式です');
+          if(!window.confirm('現在の入力値と履歴をバックアップの内容で置き換えますか？'))return;
+          state=normalize(raw.data);refill();persist();render();paintHistory();message('バックアップを復元しました');
+        } catch(error) {message(error.message||'バックアップを読み込めませんでした');}
+        finally{event.target.value='';}
+      });
+      $('resetBtn').addEventListener('click',()=>{
+        if(!window.confirm('入力値とすべての記録を削除します。よろしいですか？'))return;
+        state=normalize(null);refill();persist();render();paintHistory();message('データを初期化しました');
+      });
+      refill(); render(); paintHistory();
+    })();
+  </script>
+</body>
+</html>
