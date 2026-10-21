@@ -154,7 +154,6 @@
       </div>
       <div class="head-actions">
         <span class="save-indicator"><span class="dot"></span> 端末に自動保存</span>
-        <button class="btn btn-ghost" id="demoBtn" type="button">サンプル入力</button>
       </div>
     </header>
 
@@ -382,10 +381,6 @@
       $('snapshotBtn').addEventListener('click',()=>{
         const item={at:new Date().toISOString()};for (const field of FIELDS)item[field]=state[field];
         state.snapshots.push(item);state.snapshots=state.snapshots.slice(-150);persist();paintHistory();message('現在の所持数を記録しました');
-      });
-      $('demoBtn').addEventListener('click',()=>{
-        if ((state.crystals||state.single||state.ten||state.drawn) && !window.confirm('現在の入力値をサンプルで置き換えますか？（履歴は残ります）')) return;
-        Object.assign(state,{crystals:48000,single:38,ten:3,drawn:0});refill();persist();render();message('サンプル数値を入力しました');
       });
       $('exportBtn').addEventListener('click',()=>{
         const payload={app:'skybound-spark',version:1,exportedAt:new Date().toISOString(),data:state};
